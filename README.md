@@ -92,11 +92,78 @@ En `LeagueContext`:
 - Al iniciar, carga datos persistidos.
 - Cada vez que cambia el estado y terminó la carga inicial, persiste automáticamente.
 
+## 6) Ya creé mi espacio en GitHub: ¿cómo lo conecto?
+
+Si ya tienes tu repositorio en GitHub, ejecuta:
+
+```bash
+git init
+git add .
+git commit -m "Inicializa app de liga de fútbol"
+git branch -M main
+git remote add origin https://github.com/TU_USUARIO/TU_REPO.git
+git push -u origin main
+```
+
+Si el remoto ya existe y quieres verificar:
+
+```bash
+git remote -v
+```
+
+## 7) ¿Qué debo hacer para que corra la app en el navegador?
+
+### Requisitos
+
+- Node.js LTS (recomendado: 18 o 20).
+- npm 9+.
+
+### Pasos
+
+```bash
+npm install
+npm run web
+```
+
+También puedes usar:
+
+```bash
+npm run start
+```
+
+Y luego presionar `w` en la consola de Expo para abrir versión web.
+
+### ¿Qué debería pasar?
+
+- Expo levanta un servidor local.
+- Se abre el navegador en `http://localhost:8081` (o puerto similar).
+- Podrás navegar por tabs: Equipos, Jugadores, Partidos, Tabla, Goleadores.
+
+### Problemas comunes
+
+1. **Error 403 al instalar paquetes (`npm install`)**
+   - Suele ocurrir por proxy/red corporativa.
+   - Revisa configuración:
+
+   ```bash
+   npm config get registry
+   npm config get proxy
+   npm config get https-proxy
+   ```
+
+   - Debe apuntar a `https://registry.npmjs.org/`.
+
+2. **Puerto ocupado**
+   - Expo te ofrecerá cambiar de puerto automáticamente.
+
+3. **Dependencias no instaladas**
+   - Si falla instalación, la app no podrá arrancar ni hacer typecheck.
+
 ## Instalación rápida
 
 ```bash
 npm install
-npm run start
+npm run web
 ```
 
 > Nota: en la pantalla de partidos, el campo de goleadores usa formato rápido:
