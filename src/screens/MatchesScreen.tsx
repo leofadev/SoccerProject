@@ -13,31 +13,53 @@ export const MatchesScreen: React.FC = () => {
   // Mapa playerId -> goles anotados en el partido actual.
   const [scorerGoals, setScorerGoals] = useState<Record<string, number>>({});
 
-  const teams = state.teams;
+  // Búsqueda por nombre para no listar plantillas completas grandes.
+  const [homeSearch, setHomeSearch] = useState('');
+  const [awaySearch, setAwaySearch] = useState('');
 
+  const teams = state.teams;
   const teamName = useMemo(() => new Map(teams.map((t) => [t.id, t.name])), [teams]);
 
   const homePlayers = useMemo(
     () => state.players.filter((player) => player.teamId === homeTeamId),
     [state.players, homeTeamId],
   );
-
   const awayPlayers = useMemo(
     () => state.players.filter((player) => player.teamId === awayTeamId),
     [state.players, awayTeamId],
   );
 
-  const upsertPlayerGoal = (playerId: string, delta: number) => {
+  const filteredHomePlayers = useMemo(() => {
+    const query = homeSearch.trim().toLowerCase();
+    if (!query) return [];
+    return homePlayers.filter((p) => p.name.toLowerCase().includes(query)).slice(0, 8);
+  }, [homePlayers, homeSearch]);
+
+  const filteredAwayPlayers = useMemo(() => {
+    const query = awaySearch.trim().toLowerCase();
+    if (!query) return [];
+    return awayPlayers.filter((p) => p.name.toLowerCase().includes(query)).slice(0, 8);
+  }, [awayPlayers, awaySearch]);
+
+  const playerById = useMemo(() => new Map(state.players.map((p) => [p.id, p])), [state.players]);
+
+  // Al tocar un jugador, lo agregamos como goleador (sumando 1 gol).
+  const addGoalToPlayer = (playerId: string, resetSearch?: () => void) => {
+    setScorerGoals((prev) => ({ ...prev, [playerId]: (prev[playerId] ?? 0) + 1 }));
+    resetSearch?.();
+  };
+
+  // Permite corregir rápido restando goles al jugador ya seleccionado.
+  const removeGoalFromPlayer = (playerId: string) => {
     setScorerGoals((prev) => {
       const current = prev[playerId] ?? 0;
-      const nextValue = Math.max(0, current + delta);
+      const next = Math.max(0, current - 1);
 
-      if (nextValue === 0) {
+      if (next === 0) {
         const { [playerId]: _removed, ...rest } = prev;
         return rest;
       }
-
-      return { ...prev, [playerId]: nextValue };
+      return { ...prev, [playerId]: next };
     });
   };
 
@@ -52,6 +74,8 @@ export const MatchesScreen: React.FC = () => {
 
   const resetScorersForCurrentMatch = () => {
     setScorerGoals({});
+    setHomeSearch('');
+    setAwaySearch('');
   };
 
   const onSelectHomeTeam = (teamId: string) => {
@@ -80,11 +104,12 @@ export const MatchesScreen: React.FC = () => {
     const homeScoredByPlayers = goalsForTeam(homePlayers);
     const awayScoredByPlayers = goalsForTeam(awayPlayers);
 
-    // Validamos consistencia entre marcador y selección de goleadores.
     if (homeScoredByPlayers !== hg || awayScoredByPlayers !== ag) {
       Alert.alert(
         'Validación',
-        `Los goleadores seleccionados no coinciden con el marcador.\n${teamName.get(homeTeamId)}: ${homeScoredByPlayers}/${hg}\n${teamName.get(awayTeamId)}: ${awayScoredByPlayers}/${ag}`,
+        `Los goleadores seleccionados no coinciden con el marcador.
+${teamName.get(homeTeamId)}: ${homeScoredByPlayers}/${hg}
+${teamName.get(awayTeamId)}: ${awayScoredByPlayers}/${ag}`,
       );
       return;
     }
@@ -100,32 +125,50 @@ export const MatchesScreen: React.FC = () => {
 
     setHomeGoals('0');
     setAwayGoals('0');
-    setScorerGoals({});
+    resetScorersForCurrentMatch();
   };
 
-  const renderPlayerScorerSelector = (title: string, players: Player[]) => (
-    <View style={styles.scorersBox}>
+  const renderPlayerSearchPicker = (
+    title: string,
+    players: Player[],
+    search: string,
+    onChangeSearch: (value: string) => void,
+    filtered: Player[],
+    onPick: (id: string) => void,
+  ) => (
+    <View style={styles.pickerBox}>
       <Text style={styles.caption}>{title}</Text>
       {players.length === 0 ? (
         <Text style={styles.helperText}>Este equipo no tiene jugadores registrados.</Text>
       ) : (
-        players.map((player) => (
-          <View key={player.id} style={styles.playerRow}>
-            <Text style={styles.playerName}>#{player.number} {player.name}</Text>
-            <View style={styles.counterBox}>
-              <Text style={styles.counterButton} onPress={() => upsertPlayerGoal(player.id, -1)}>
-                -
-              </Text>
-              <Text style={styles.counterValue}>{scorerGoals[player.id] ?? 0}</Text>
-              <Text style={styles.counterButton} onPress={() => upsertPlayerGoal(player.id, 1)}>
-                +
-              </Text>
+        <>
+          <TextInput
+            value={search}
+            onChangeText={onChangeSearch}
+            style={styles.input}
+            placeholder="Buscar jugador por nombre"
+          />
+          {!search.trim() ? (
+            <Text style={styles.helperText}>Escribe para buscar y seleccionar al goleador.</Text>
+          ) : filtered.length === 0 ? (
+            <Text style={styles.helperText}>No hay jugadores que coincidan con la búsqueda.</Text>
+          ) : (
+            <View style={styles.playersWrap}>
+              {filtered.map((player) => (
+                <Text key={player.id} style={styles.playerChip} onPress={() => onPick(player.id)}>
+                  #{player.number} {player.name}
+                </Text>
+              ))}
             </View>
-          </View>
-        ))
+          )}
+        </>
       )}
     </View>
   );
+
+  const selectedScorers = Object.entries(scorerGoals)
+    .map(([playerId, goals]) => ({ player: playerById.get(playerId), playerId, goals }))
+    .filter((entry) => entry.player && entry.goals > 0);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -156,8 +199,38 @@ export const MatchesScreen: React.FC = () => {
       <TextInput value={homeGoals} onChangeText={setHomeGoals} keyboardType="numeric" style={styles.input} placeholder="Goles local" />
       <TextInput value={awayGoals} onChangeText={setAwayGoals} keyboardType="numeric" style={styles.input} placeholder="Goles visitante" />
 
-      {homeTeamId && renderPlayerScorerSelector(`Goleadores de ${teamName.get(homeTeamId)}`, homePlayers)}
-      {awayTeamId && renderPlayerScorerSelector(`Goleadores de ${teamName.get(awayTeamId)}`, awayPlayers)}
+      {homeTeamId &&
+        renderPlayerSearchPicker(
+          `Buscar y seleccionar goleador de ${teamName.get(homeTeamId)}`,
+          homePlayers,
+          homeSearch,
+          setHomeSearch,
+          filteredHomePlayers,
+          (playerId) => addGoalToPlayer(playerId, () => setHomeSearch('')),
+        )}
+
+      {awayTeamId &&
+        renderPlayerSearchPicker(
+          `Buscar y seleccionar goleador de ${teamName.get(awayTeamId)}`,
+          awayPlayers,
+          awaySearch,
+          setAwaySearch,
+          filteredAwayPlayers,
+          (playerId) => addGoalToPlayer(playerId, () => setAwaySearch('')),
+        )}
+
+      <View style={styles.selectedBox}>
+        <Text style={styles.caption}>Goleadores seleccionados (toca para quitar 1 gol):</Text>
+        {selectedScorers.length === 0 ? (
+          <Text style={styles.helperText}>No hay goleadores seleccionados.</Text>
+        ) : (
+          selectedScorers.map((entry) => (
+            <Text key={entry.playerId} style={styles.selectedItem} onPress={() => removeGoalFromPlayer(entry.playerId)}>
+              {entry.player?.name} ({teamName.get(entry.player?.teamId ?? '')}) - {entry.goals} gol(es)
+            </Text>
+          ))
+        )}
+      </View>
 
       <Button title="Registrar partido" onPress={onSaveMatch} />
 
@@ -195,33 +268,30 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#fff',
   },
-  scorersBox: {
+  pickerBox: {
     borderWidth: 1,
     borderColor: '#e5e5e5',
     borderRadius: 8,
     padding: 10,
     backgroundColor: '#fff',
   },
-  helperText: { color: '#666' },
-  playerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  playerName: { flex: 1 },
-  counterBox: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  counterButton: {
+  playersWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  playerChip: {
     borderWidth: 1,
-    borderColor: '#bbb',
-    minWidth: 28,
-    textAlign: 'center',
-    borderRadius: 4,
-    fontWeight: '700',
-    paddingVertical: 2,
+    borderColor: '#9ad',
+    backgroundColor: '#eef7ff',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  counterValue: { minWidth: 20, textAlign: 'center', fontWeight: '700' },
+  selectedBox: {
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: '#fff',
+  },
+  selectedItem: { paddingVertical: 4, color: '#123' },
+  helperText: { color: '#666' },
   matchLine: { paddingVertical: 4 },
 });
