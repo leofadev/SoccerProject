@@ -65,29 +65,37 @@ export const calculateStandings = (state: LeagueState): TeamStanding[] => {
   return rows;
 };
 
-// Recorre goleadores cargados en cada partido y crea ranking acumulado.
+// Recorre goleadores válidos en cada partido y crea ranking acumulado.
 export const calculateScorersRanking = (state: LeagueState): ScorerEntry[] => {
   const goalsMap = new Map<string, number>();
+  const teamById = new Map(state.teams.map((t) => [t.id, t.name]));
+  const playerById = new Map(state.players.map((p) => [p.id, p]));
 
   state.matches.forEach((match) => {
     match.scorers.forEach((s) => {
+      const player = playerById.get(s.playerId);
+
+      // Si el jugador no existe en catálogo, omitimos ese registro para evitar
+      // mensajes confusos como "Jugador eliminado (Sin equipo)".
+      if (!player) return;
+
       goalsMap.set(s.playerId, (goalsMap.get(s.playerId) ?? 0) + s.goals);
     });
   });
 
-  const teamById = new Map(state.teams.map((t) => [t.id, t.name]));
-  const playerById = new Map(state.players.map((p) => [p.id, p]));
-
   const ranking: ScorerEntry[] = Array.from(goalsMap.entries())
     .map(([playerId, goals]) => {
       const player = playerById.get(playerId);
+      if (!player) return null;
+
       return {
         playerId,
-        playerName: player?.name ?? 'Jugador eliminado',
-        teamName: player ? teamById.get(player.teamId) ?? 'Sin equipo' : 'Sin equipo',
+        playerName: player.name,
+        teamName: teamById.get(player.teamId) ?? 'Equipo no disponible',
         goals,
       };
     })
+    .filter((entry): entry is ScorerEntry => entry !== null)
     .sort((a, b) => {
       if (b.goals !== a.goals) return b.goals - a.goals;
       return a.playerName.localeCompare(b.playerName);

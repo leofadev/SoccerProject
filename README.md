@@ -56,6 +56,8 @@ Definido en `src/types/models.ts`:
   - `MatchesScreen`
   - `StandingsScreen`
   - `ScorersScreen`
+  - En `Partidos`, la carga de goleadores se hace seleccionando jugadores de cada equipo con botones `+/-` (sin usar IDs manuales).
+  - La validación obliga a que la suma de goles por jugadores coincida con el marcador cargado.
 
 ## 4) Lógica de cálculo de la tabla
 
