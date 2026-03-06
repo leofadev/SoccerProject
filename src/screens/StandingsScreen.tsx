@@ -8,14 +8,23 @@ export const StandingsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Tabla de posiciones</Text>
+      <View style={styles.tableHeader}>
+        <Text style={[styles.hCell, styles.nameCol]}>Equipo</Text>
+        <Text style={styles.hCell}>PJ</Text>
+        <Text style={styles.hCell}>DG</Text>
+        <Text style={styles.hCell}>Pts</Text>
+      </View>
       <FlatList
         data={standings}
         keyExtractor={(item) => item.teamId}
-        ListEmptyComponent={<Text>No hay datos para calcular tabla.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>No hay datos para calcular tabla.</Text>}
         renderItem={({ item, index }) => (
-          <Text style={styles.row}>
-            {index + 1}. {item.teamName} | PJ:{item.played} G:{item.won} E:{item.drawn} P:{item.lost} GF:{item.goalsFor} GC:{item.goalsAgainst} DG:{item.goalDifference} Pts:{item.points}
-          </Text>
+          <View style={styles.row}>
+            <Text style={[styles.cell, styles.nameCol]}>{index + 1}. {item.teamName}</Text>
+            <Text style={styles.cell}>{item.played}</Text>
+            <Text style={styles.cell}>{item.goalDifference}</Text>
+            <Text style={[styles.cell, styles.points]}>{item.points}</Text>
+          </View>
         )}
       />
     </View>
@@ -23,7 +32,27 @@ export const StandingsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  header: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  row: { paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  container: { flex: 1, padding: 16, backgroundColor: '#f4f7fb' },
+  header: { fontSize: 20, fontWeight: '700', marginBottom: 10, color: '#102a43' },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#d9e8ff',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  hCell: { flex: 0.8, fontWeight: '700', color: '#102a43' },
+  nameCol: { flex: 2.8 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginTop: 8,
+  },
+  cell: { flex: 0.8, color: '#243b53' },
+  points: { fontWeight: '700', color: '#0b2f66' },
+  empty: { marginTop: 12, color: '#829ab1' },
 });

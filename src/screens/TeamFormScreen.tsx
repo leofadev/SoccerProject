@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Button, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useLeague } from '../context/LeagueContext';
 import { TeamsStackParamList } from '../navigation/AppNavigator';
@@ -32,26 +32,51 @@ export const TeamFormScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <TextInput
-        placeholder="Nombre del equipo"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-      />
-      <TextInput placeholder="Ciudad" value={city} onChangeText={setCity} style={styles.input} />
-      <Button title="Guardar" onPress={onSave} />
+      <View style={styles.card}>
+        <Text style={styles.title}>{team ? 'Editar equipo' : 'Nuevo equipo'}</Text>
+        <TextInput
+          placeholder="Nombre del equipo"
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+        />
+        <TextInput placeholder="Ciudad" value={city} onChangeText={setCity} style={styles.input} />
+
+        <Pressable style={styles.primaryButton} onPress={onSave}>
+          <Text style={styles.primaryButtonText}>Guardar</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 12 },
+  container: { flex: 1, padding: 16, backgroundColor: '#f4f7fb' },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    gap: 12,
+  },
+  title: { fontSize: 18, fontWeight: '700', color: '#102a43' },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: '#d9e2ec',
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: '#fff',
   },
+  primaryButton: {
+    backgroundColor: '#1363df',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  primaryButtonText: { color: '#fff', fontWeight: '700' },
 });

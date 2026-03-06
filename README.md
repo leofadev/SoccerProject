@@ -51,6 +51,7 @@ Definido en `src/types/models.ts`:
   - Tabs: Equipos, Jugadores, Partidos, Tabla, Goleadores.
   - Stack interno para lista y formulario de equipos.
 - Pantallas (`src/screens/*`):
+  - Diseño visual mejorado para web con tarjetas, botones primarios, badges y tablas más legibles en equipos, jugadores, tabla y goleadores.
   - `TeamsScreen` / `TeamFormScreen`
   - `PlayersScreen`
   - `MatchesScreen`
