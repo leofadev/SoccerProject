@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Soccer Project",
+    "slug": "soccer-project",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "soccerproject",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#07111f"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
