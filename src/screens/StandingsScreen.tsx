@@ -1,58 +1,11 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Card, Screen, Subtitle, Title } from '../components/ui';
 import { useLeague } from '../context/LeagueContext';
+import { colors } from '../theme';
 
 export const StandingsScreen: React.FC = () => {
   const { standings } = useLeague();
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Tabla de posiciones</Text>
-      <View style={styles.tableHeader}>
-        <Text style={[styles.hCell, styles.nameCol]}>Equipo</Text>
-        <Text style={styles.hCell}>PJ</Text>
-        <Text style={styles.hCell}>DG</Text>
-        <Text style={styles.hCell}>Pts</Text>
-      </View>
-      <FlatList
-        data={standings}
-        keyExtractor={(item) => item.teamId}
-        ListEmptyComponent={<Text style={styles.empty}>No hay datos para calcular tabla.</Text>}
-        renderItem={({ item, index }) => (
-          <View style={styles.row}>
-            <Text style={[styles.cell, styles.nameCol]}>{index + 1}. {item.teamName}</Text>
-            <Text style={styles.cell}>{item.played}</Text>
-            <Text style={styles.cell}>{item.goalDifference}</Text>
-            <Text style={[styles.cell, styles.points]}>{item.points}</Text>
-          </View>
-        )}
-      />
-    </View>
-  );
+  return <Screen><Title>Tabla</Title><Subtitle>Puntos, goles y desempates actualizados automáticamente.</Subtitle><FlatList data={standings} keyExtractor={(i) => i.teamId} contentContainerStyle={styles.list} ListEmptyComponent={<Subtitle>No hay datos para calcular tabla.</Subtitle>} renderItem={({ item, index }) => <Card style={styles.row}><Text style={styles.pos}>{index + 1}</Text><View style={styles.info}><Text style={styles.name}>{item.teamName}</Text><Text style={styles.meta}>PJ {item.played} · G {item.won} · E {item.drawn} · P {item.lost} · DG {item.goalDifference}</Text></View><Text style={styles.points}>{item.points}</Text></Card>} /></Screen>;
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#f4f7fb' },
-  header: { fontSize: 20, fontWeight: '700', marginBottom: 10, color: '#102a43' },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#d9e8ff',
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-  },
-  hCell: { flex: 0.8, fontWeight: '700', color: '#102a43' },
-  nameCol: { flex: 2.8 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    marginTop: 8,
-  },
-  cell: { flex: 0.8, color: '#243b53' },
-  points: { fontWeight: '700', color: '#0b2f66' },
-  empty: { marginTop: 12, color: '#829ab1' },
-});
+const styles = StyleSheet.create({ list: { paddingTop: 14, paddingBottom: 24 }, row: { marginBottom: 10, flexDirection: 'row', alignItems: 'center' }, pos: { color: colors.primary, fontSize: 22, fontWeight: '900', width: 34 }, info: { flex: 1 }, name: { color: colors.text, fontWeight: '900' }, meta: { color: colors.muted, marginTop: 3, fontSize: 12 }, points: { color: colors.text, fontSize: 22, fontWeight: '900' } });

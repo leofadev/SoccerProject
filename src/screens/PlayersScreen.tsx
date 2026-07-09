@@ -1,128 +1,41 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, ScrollView, StyleSheet, Text } from 'react-native';
+import { Card, Field, Pill, PrimaryButton, Screen, Subtitle, Title } from '../components/ui';
 import { useLeague } from '../context/LeagueContext';
+import { colors } from '../theme';
 
 export const PlayersScreen: React.FC = () => {
   const { state, addPlayer } = useLeague();
-  const [teamId, setTeamId] = useState<string | null>(null);
+  const [teamId, setTeamId] = useState<string | null>(state.teams[0]?.id ?? null);
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
-
-  const playersByTeam = useMemo(() => {
-    return state.teams.map((team) => ({
-      ...team,
-      players: state.players.filter((p) => p.teamId === team.id),
-    }));
-  }, [state.teams, state.players]);
+  const playersByTeam = useMemo(() => state.teams.map((team) => ({ ...team, players: state.players.filter((p) => p.teamId === team.id).sort((a, b) => a.number - b.number) })), [state.teams, state.players]);
 
   const onAddPlayer = () => {
-    if (!teamId) {
-      Alert.alert('Validación', 'Primero selecciona un equipo tocando su nombre.');
-      return;
-    }
     const parsed = Number(number);
-    if (!name.trim() || Number.isNaN(parsed)) {
-      Alert.alert('Validación', 'Ingresa nombre y dorsal numérico.');
-      return;
-    }
+    if (!teamId) return Alert.alert('Validación', 'Primero crea y selecciona un equipo.');
+    if (!name.trim() || Number.isNaN(parsed)) return Alert.alert('Validación', 'Ingresa nombre y dorsal numérico.');
     addPlayer(teamId, name.trim(), parsed);
-    setName('');
-    setNumber('');
+    setName(''); setNumber('');
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.caption}>Selecciona equipo:</Text>
-      <FlatList
-        horizontal
-        data={state.teams}
-        keyExtractor={(item) => item.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 8 }}
-        renderItem={({ item }) => (
-          <Text
-            onPress={() => setTeamId(item.id)}
-            style={[styles.teamPill, item.id === teamId && styles.teamPillActive]}
-          >
-            {item.name}
-          </Text>
-        )}
-      />
-
-      <View style={styles.formCard}>
-        <TextInput placeholder="Nombre del jugador" value={name} onChangeText={setName} style={styles.input} />
-        <TextInput
-          placeholder="Dorsal"
-          keyboardType="numeric"
-          value={number}
-          onChangeText={setNumber}
-          style={styles.input}
-        />
-        <Pressable style={styles.primaryButton} onPress={onAddPlayer}>
-          <Text style={styles.primaryButtonText}>Agregar jugador</Text>
-        </Pressable>
-      </View>
-
+    <Screen>
       <FlatList
         data={playersByTeam}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 16 }}
-        renderItem={({ item }) => (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{item.name}</Text>
-            {item.players.map((p) => (
-              <Text key={p.id} style={styles.playerRow}>#{p.number} {p.name}</Text>
-            ))}
-            {item.players.length === 0 && <Text style={styles.emptyText}>Sin jugadores.</Text>}
-          </View>
+        ListHeaderComponent={(
+          <>
+            <Title>Plantillas</Title><Subtitle>Agrega dorsales y organiza jugadores por equipo.</Subtitle>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>{state.teams.map((team) => <Pill key={team.id} label={team.name} active={team.id === teamId} onPress={() => setTeamId(team.id)} />)}</ScrollView>
+            <Card style={styles.form}><Field placeholder="Nombre del jugador" value={name} onChangeText={setName} /><Field placeholder="Dorsal" keyboardType="numeric" value={number} onChangeText={setNumber} /><PrimaryButton label="Agregar jugador" onPress={onAddPlayer} /></Card>
+          </>
         )}
+        contentContainerStyle={styles.content}
+        renderItem={({ item }) => <Card style={styles.team}><Text style={styles.teamTitle}>{item.name}</Text>{item.players.length ? item.players.map((p) => <Text key={p.id} style={styles.player}>#{p.number} · {p.name}</Text>) : <Subtitle>Sin jugadores.</Subtitle>}</Card>}
       />
-    </View>
+    </Screen>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, gap: 8, backgroundColor: '#f4f7fb' },
-  caption: { fontWeight: '700', color: '#102a43' },
-  teamPill: {
-    borderWidth: 1,
-    borderColor: '#bcccdc',
-    borderRadius: 99,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8,
-    backgroundColor: '#fff',
-    color: '#334e68',
-  },
-  teamPillActive: { backgroundColor: '#d9e8ff', borderColor: '#1363df', color: '#0b2f66' },
-  formCard: {
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    gap: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d9e2ec',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
-  primaryButton: {
-    backgroundColor: '#1363df',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  primaryButtonText: { color: '#fff', fontWeight: '700' },
-  section: {
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 10,
-    backgroundColor: '#fff',
-  },
-  sectionTitle: { fontWeight: '700', color: '#102a43', marginBottom: 6 },
-  playerRow: { color: '#243b53', paddingVertical: 2 },
-  emptyText: { color: '#829ab1' },
-});
+const styles = StyleSheet.create({ content: { paddingBottom: 24 }, pills: { marginTop: 14 }, form: { marginVertical: 14 }, team: { marginBottom: 12 }, teamTitle: { color: colors.text, fontWeight: '900', fontSize: 18, marginBottom: 8 }, player: { color: colors.muted, paddingVertical: 3 } });

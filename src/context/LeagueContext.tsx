@@ -13,11 +13,31 @@ type LeagueContextValue = {
   editTeam: (id: string, name: string, city?: string) => void;
   addPlayer: (teamId: string, name: string, number: number) => void;
   addMatch: (payload: Omit<Match, 'id' | 'scorers'> & { scorers?: MatchScorer[] }) => void;
+  resetLeague: () => void;
+  loadDemoLeague: () => void;
 };
 
 const LeagueContext = createContext<LeagueContextValue | undefined>(undefined);
 
 const EMPTY_STATE: LeagueState = { teams: [], players: [], matches: [] };
+
+const DEMO_STATE: LeagueState = {
+  teams: [
+    { id: 'demo-lions', name: 'Leones FC', city: 'Norte' },
+    { id: 'demo-titans', name: 'Titanes', city: 'Centro' },
+    { id: 'demo-river', name: 'Río Azul', city: 'Sur' },
+  ],
+  players: [
+    { id: 'demo-p1', teamId: 'demo-lions', name: 'Mateo Cruz', number: 10 },
+    { id: 'demo-p2', teamId: 'demo-lions', name: 'Leo Ramos', number: 7 },
+    { id: 'demo-p3', teamId: 'demo-titans', name: 'Nico Vega', number: 9 },
+    { id: 'demo-p4', teamId: 'demo-river', name: 'Santi Mora', number: 11 },
+  ],
+  matches: [
+    { id: 'demo-m1', date: new Date().toISOString(), homeTeamId: 'demo-lions', awayTeamId: 'demo-titans', homeGoals: 2, awayGoals: 1, scorers: [{ playerId: 'demo-p1', goals: 1 }, { playerId: 'demo-p2', goals: 1 }, { playerId: 'demo-p3', goals: 1 }] },
+    { id: 'demo-m2', date: new Date().toISOString(), homeTeamId: 'demo-river', awayTeamId: 'demo-lions', homeGoals: 1, awayGoals: 1, scorers: [{ playerId: 'demo-p4', goals: 1 }, { playerId: 'demo-p1', goals: 1 }] },
+  ],
+};
 
 export const LeagueProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [state, setState] = useState<LeagueState>(EMPTY_STATE);
@@ -64,6 +84,9 @@ export const LeagueProvider: React.FC<React.PropsWithChildren> = ({ children }) 
     setState((prev) => ({ ...prev, matches: [...prev.matches, newMatch] }));
   }, []);
 
+  const resetLeague = useCallback(() => setState(EMPTY_STATE), []);
+  const loadDemoLeague = useCallback(() => setState(DEMO_STATE), []);
+
   const standings = useMemo(() => calculateStandings(state), [state]);
   const scorers = useMemo(() => calculateScorersRanking(state), [state]);
 
@@ -77,8 +100,10 @@ export const LeagueProvider: React.FC<React.PropsWithChildren> = ({ children }) 
       editTeam,
       addPlayer,
       addMatch,
+      resetLeague,
+      loadDemoLeague,
     }),
-    [state, loading, standings, scorers, addTeam, editTeam, addPlayer, addMatch],
+    [state, loading, standings, scorers, addTeam, editTeam, addPlayer, addMatch, resetLeague, loadDemoLeague],
   );
 
   return <LeagueContext.Provider value={value}>{children}</LeagueContext.Provider>;
